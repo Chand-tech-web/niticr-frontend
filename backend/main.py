@@ -20,3 +20,11 @@ async def ocr(file: UploadFile = File(...)):
         delete_file(temp_file)
 
     return PlainTextResponse(result_text)
+
+
+
+# 👇 ये नीचे जरूर जोड़ो!
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))  # Render का PORT env variable
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
