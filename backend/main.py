@@ -4,20 +4,19 @@ import shutil
 import os
 
 from utils.ocr_logic import extract_text
+from utils.cleanup import delete_file
 
 app = FastAPI()
 
 @app.post("/ocr")
 async def ocr(file: UploadFile = File(...)):
-    # Save file temporarily
-    temp_file_path = f"temp_{file.filename}"
-    with open(temp_file_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    temp_file = f"temp_{file.filename}"
+    with open(temp_file, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-    # Run OCR
-    result_text = extract_text(temp_file_path)
-
-    # Delete file
-    os.remove(temp_file_path)
+    try:
+        result_text = extract_text(temp_file)
+    finally:
+        delete_file(temp_file)
 
     return PlainTextResponse(result_text)

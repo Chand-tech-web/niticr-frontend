@@ -1,4 +1,10 @@
 fastapi
 uvicorn
 easyocr
+pdf2image
+pytesseract
+opencv-python
+python-docx
+pandas
 python-multipart
+Pillow
