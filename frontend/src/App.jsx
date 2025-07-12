@@ -6,24 +6,33 @@ function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
-  const [backendUrl, setBackendUrl] = useState("");
+  const [backendUrl, setBackendUrl] = useState(
+    "https://aac9bb441693.ngrok-free.app"
+  ); // Default ngrok URL
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please upload a file.");
-    if (!backendUrl) return alert("Please enter backend URL.");
+    if (!file) return alert("⚠️ Please upload a file.");
+    if (!backendUrl) return alert("⚠️ Please enter backend URL.");
 
     const formData = new FormData();
     formData.append("file", file);
     setLoading(true);
+    setResult("");
 
     try {
-      const res = await axios.post(`${backendUrl}/ocr`, formData, {
+      const res = await axios.post(`${backendUrl}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setResult(res.data);
+
+      if (res.data.text) {
+        setResult(res.data.text);
+      } else {
+        alert("❌ OCR failed. No text extracted.");
+      }
     } catch (err) {
-      alert("❌ OCR failed. Please check URL or try again.");
+      console.error(err);
+      alert("❌ Error: Could not connect to backend.");
     } finally {
       setLoading(false);
     }
@@ -75,6 +84,7 @@ function App() {
           value={backendUrl}
           onChange={(e) => setBackendUrl(e.target.value)}
         />
+
         <label className="upload-box">
           <input
             type="file"
@@ -83,8 +93,9 @@ function App() {
           />
           {file ? file.name : "📁 Click to upload file"}
         </label>
+
         <button type="submit" className="btn">
-          {loading ? "Processing..." : "Extract Text"}
+          {loading ? "⏳ Processing..." : "🔍 Extract Text"}
         </button>
       </form>
 
