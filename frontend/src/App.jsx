@@ -6,41 +6,75 @@ function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
+  const [backendUrl, setBackendUrl] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please upload a file first.");
+    if (!file) return alert("Please upload a file.");
+    if (!backendUrl) return alert("Please enter backend URL.");
 
     const formData = new FormData();
     formData.append("file", file);
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        "https://ocr-tool-llnh.onrender.com/ocr", // ← अपने backend URL से बदलें
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      const res = await axios.post(`${backendUrl}/ocr`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setResult(res.data);
     } catch (err) {
-      alert("OCR failed");
+      alert("❌ OCR failed. Please check URL or try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownload = () => {
+  const downloadAsTxt = () => {
+    const blob = new Blob([result], { type: "text/plain" });
+    triggerDownload(blob, "ocr-output.txt");
+  };
+
+  const downloadAsHtml = () => {
+    const html = `<html><body><pre>${result}</pre></body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    triggerDownload(blob, "ocr-output.html");
+  };
+
+  const downloadAsDoc = () => {
+    const header = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'></head><body>`;
+    const footer = "</body></html>";
+    const content = header + `<pre>${result}</pre>` + footer;
+    const blob = new Blob(["\ufeff", content], {
+      type: "application/msword",
+    });
+    triggerDownload(blob, "ocr-output.doc");
+  };
+
+  const triggerDownload = (blob, filename) => {
     const element = document.createElement("a");
-    const fileBlob = new Blob([result], { type: "text/plain" });
-    element.href = URL.createObjectURL(fileBlob);
-    element.download = "ocr-result.txt";
+    element.href = URL.createObjectURL(blob);
+    element.download = filename;
+    document.body.appendChild(element);
     element.click();
+    document.body.removeChild(element);
   };
 
   return (
     <div className="wrapper">
       <h1 className="title">📄 NITIOCR — AI OCR Tool</h1>
+
       <form onSubmit={handleSubmit} className="form">
+        <input
+          type="text"
+          className="url-input"
+          placeholder="🔗 Enter backend URL here"
+          value={backendUrl}
+          onChange={(e) => setBackendUrl(e.target.value)}
+        />
         <label className="upload-box">
           <input
             type="file"
@@ -58,9 +92,17 @@ function App() {
         <div className="result-box">
           <h2>✅ Extracted Text:</h2>
           <textarea readOnly value={result}></textarea>
-          <button onClick={handleDownload} className="btn">
-            ⬇️ Download Result
-          </button>
+          <div className="download-buttons">
+            <button onClick={downloadAsTxt} className="btn">
+              ⬇️ TXT
+            </button>
+            <button onClick={downloadAsHtml} className="btn">
+              ⬇️ HTML
+            </button>
+            <button onClick={downloadAsDoc} className="btn">
+              ⬇️ DOC
+            </button>
+          </div>
         </div>
       )}
     </div>
